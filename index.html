@@ -8,23 +8,128 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
 </head>
 <body>
-    <script>
-        console.log('Hello!!!!');
-    </script>
     <h1>WebView</h1>
     <hr/>
-    <div
-    style="display:flex;flex-direction: column;padding:20px;"
-    
-    >
-        <button class="btn btn-success">useStoreState(스토어커넥션연결)"</button><br/>
-        <button class="btn btn-success">getItems(단건상품가져오기)"</button><br/>
-        <button class="btn btn-success">requestItemPurchase(단건상품결제하기)"</button><br/>
-        <button class="btn btn-success">consumeAllItemsAndroid(단품상품초기화?)"</button><br/>
-        <button class="btn btn-success">log(로그!)"</button><br/>
+    <div style="display:flex;flex-direction: column;padding:20px;">
+        <button class="btn btn-success" onClick="get_items()">
+            get_items(단건상품가져오기)2
+        </button><br/>
+        <button class="btn btn-success" onClick="sendRNMessage(MESSAGE_TYPE.req_purchase,(ok)=>{alert(ok)},(err)=>{alert(err)})">
+            req_purchase(단건상품결제요청)
+        </button><br/>
+        <button class="btn btn-success" onclick="sendRNMessage(MESSAGE_TYPE.purchase_ok,(ok)=>{alert(ok)},(err)=>{alert(err)})">
+            purchase_ok(서버처리완료)
+        </button><br/>
+        <button class="btn btn-success" onclick="window.webViewBridge.hello()">test</button><br/>
+        <div>
+            <p id="txt"></p>
+        </div>
     </div>
 
+    <script>
+        /**
+         *  변수 선언
+         */ 
+        window.counter = 0;
+        const ERROR_TYPES = {
+            notMobile: "핸드폰이 아닙니다."
+        };
+        const MESSAGE_TYPE = {
+            req_connect: "REQ_CONNECT",
+            req_purchase: "REQ_PURCHASE",
+            get_items: "GET_ITEMS",
+            purchase_ok: "PURCHASE_OK",
+            purchase_fail: "PURCHASE_FAIL",
+        };
 
+        /**
+         * 공통함수 : 메시지보내기
+         */ 
+        const sendRNMessage = (type, callback, errback) => {
+            if (window.ReactNativeWebView) {
+                // window.ReactNativeWebView.postMessage(
+                //     JSON.stringify({ type: type })
+                // );
+                window.counter++;
+                console.log(window.counter);
+                window.webViewBridge.send(type
+                    , window.counter
+                    , callback
+                    , errback);
+            } else {
+                // 모바일이 아니라면 모바일 아님을 alert로 띄웁니다.
+                // console.log(ERROR_TYPES.notMobile)
+                // alert(ERROR_TYPES.notMobile);
+                window.counter++;
+                console.log(window.counter);
+                window.webViewBridge.hello(type
+                    , window.counter
+                    , callback
+                    , errback);
+            }
+
+        };
+
+        /**
+         * 상품가져오기 및 스토어 커넥션
+         * : 성공시 결제 시도
+         */ 
+         const get_items = () =>{
+            sendRNMessage(MESSAGE_TYPE.get_items, (ok)=>{
+                    alert(ok)
+                    if(ok == 'success'){
+                        reqPurchase();
+                    }else{
+                        alert('구글 스토어 서버 접속이 되지 않습니다. 잠시 후 다시 시도하세요.');
+                    }
+                },
+                (err)=>{alert(err)}
+            )
+        };
+        /**
+         * 구매요청
+         */
+        const reqPurchase = () =>{
+            sendRNMessage(MESSAGE_TYPE.req_purchase, (ok)=>{
+                alert('okok');
+                alert(ok);
+                if(ok == 'success'){
+                    purchase_process();
+                }else{
+                    alert('결제에 실패하였습니다.(TODO: 환불처리 호출 필요(web => app))');
+                }
+            }
+            , (err)=>{
+                alert(err)
+            });
+        };
+        /**
+         * 구매처리(DB처리)
+         */ 
+        const purchase_process = () =>{
+            alert('hihihihihih@@@@');
+            console.log('#####구매요청완료!!! 구매완료처리!!!')
+            // TODO 1. 서버요청 로직 필요
+            // ... axios 
+            // ... 디비성공하면 success 리턴!
+            let ok = 'success'; // TODO 성공테스트용 **삭제필수
+            ok = 'fail';  // TODO 실패테스트용 **삭제필수
+            if(ok == 'success'){
+                // TODO - 성공시
+                // TODO - 최종승인함
+                // ... DB호출 필요
+                sendRNMessage(MESSAGE_TYPE.purchase_ok, (ok)=>{alert(ok)}, (err=>{alert(err)}));
+            }else{
+                // TODO - 실패시
+                // TODO - 환불처리함
+                sendRNMessage(MESSAGE_TYPE.purchase_fail, (ok)=>{alert(ok)}, (err=>{alert(err)}));
+            }
+        };
+        
+
+        
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8" crossorigin="anonymous"></script>
+    <script src="./webViewBridge.js"></script>
 </body>
 </html>
